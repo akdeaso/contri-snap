@@ -42,32 +42,40 @@ export function Leaderboard({ data }: LeaderboardProps) {
 
   const backgroundFit = data.backgroundFit || 'cover';
   const backgroundImage = data.backgroundImage;
+  const scale = data.backgroundScale || 1;
+  const position = data.backgroundPosition || { x: 0, y: 0 };
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden"
+      className="relative w-full h-full overflow-hidden bg-slate-900"
       style={{
         width: '1080px',
         height: '1350px',
-        background: backgroundImage
-          ? `url(${backgroundImage})`
-          : 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-        backgroundSize: backgroundImage ? backgroundFit : 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Dark overlay untuk readability jika ada background image */}
-      {backgroundImage && (
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/85 via-slate-900/75 to-slate-900/85"></div>
-      )}
-
-      {/* Ambient background effects - hanya muncul jika tidak ada background image */}
-      {!backgroundImage && (
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/3 -right-40 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl transform -translate-x-1/2"></div>
+      {/* Background Image Layer */}
+      {backgroundImage ? (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <img
+            src={backgroundImage}
+            alt="Background"
+            className="absolute inset-0 w-full h-full object-contain transition-transform duration-75 ease-linear origin-center"
+            style={{
+              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+            }}
+          />
+          {/* Dark overlay for readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/85 via-slate-900/75 to-slate-900/85"></div>
+        </div>
+      ) : (
+        /* Fallback Gradient Background */
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_50%,#0f172a_100%)]">
+           {/* Ambient background effects */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl"></div>
+            <div className="absolute top-1/3 -right-40 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl transform -translate-x-1/2"></div>
+          </div>
         </div>
       )}
 

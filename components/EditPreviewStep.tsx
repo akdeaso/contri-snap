@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { ArrowLeft, Download, Copy, Calendar } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Download, Copy, Calendar, RotateCcw, ZoomIn, ZoomOut, MousePointer2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { Leaderboard } from './Leaderboard';
 import { BackgroundSelector } from './BackgroundSelector';
@@ -22,7 +22,18 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
     title: data.title || 'Visual Novel Lovers',
     month: data.month || 'Dec',
     year: data.year || '2025',
+    backgroundScale: data.backgroundScale || 1,
+    backgroundPosition: data.backgroundPosition || { x: 0, y: 0 },
   });
+
+  // Dragging State
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [initialPos, setInitialPos] = useState({ x: 0, y: 0 });
+
+  // Responsive Preview State
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scaleFactor, setScaleFactor] = useState(0.5);
 
   const updateContributor = (index: number, field: keyof Contributor, value: string | number | BadgeType) => {
     const updated = { ...editedData };
@@ -32,8 +43,6 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
     };
     setEditedData(updated);
   };
-
-  const badgeOptions: BadgeType[] = [null, 'all-star contributor', 'top contributor', 'rising contributor'];
 
   // Date picker handler for month/year only
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +110,72 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
     }
   };
 
+  // --- Scale Calculation ---
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const width = containerRef.current.offsetWidth;
+        // The original design width is 1080px.
+        // We want the container to be responsive, so we calculate the scale based on the current width of the container.
+        const newScale = width / 1080;
+        setScaleFactor(newScale);
+      }
+    };
+
+    // Calculate initial scale
+    updateScale();
+
+    // Listen for resize
+    const observer = new ResizeObserver(updateScale);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+
+  // --- Background Interaction Handlers ---
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!editedData.backgroundImage) return;
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+    setInitialPos(editedData.backgroundPosition || { x: 0, y: 0 });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    
+    // Adjust delta by scaleFactor to keep movement 1:1 with cursor
+    const deltaX = (e.clientX - dragStart.x) / scaleFactor;
+    const deltaY = (e.clientY - dragStart.y) / scaleFactor;
+    
+    setEditedData({
+      ...editedData,
+      backgroundPosition: {
+        x: initialPos.x + deltaX,
+        y: initialPos.y + deltaY
+      }
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Global mouse up to catch dragging outside container
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      if (isDragging) setIsDragging(false);
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, [isDragging]);
+
+
   return (
     <div className="flex flex-col h-full">
       {/* Toast Notification */}
@@ -121,7 +196,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
 
       {/* Two Column Layout */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-3 min-h-0">
-        {/* Left Column - 3 Rows: Header Settings, Background Selector, Preview */}
+        {/* Left Column - Header, Background, Preview */}
         <div className="flex flex-col gap-2 min-h-0">
           {/* Row 1: Header Settings */}
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2.5 space-y-2.5">
@@ -129,58 +204,121 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
               Header Settings
             </h4>
             
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Group Name
-              </label>
-              <input
-                type="text"
-                value={editedData.title || 'Visual Novel Lovers'}
-                onChange={(e) => setEditedData({ ...editedData, title: e.target.value })}
-                className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                placeholder="Visual Novel Lovers"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Date (Month & Year)
-              </label>
-              <div className="relative group">
-                <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Group Name
+                </label>
                 <input
-                  type="month"
-                  value={getDateInputValue()}
-                  onChange={handleDateChange}
-                  className="w-full pl-9 pr-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm cursor-pointer hover:border-slate-400 dark:hover:border-slate-500"
+                  type="text"
+                  value={editedData.title || 'Visual Novel Lovers'}
+                  onChange={(e) => setEditedData({ ...editedData, title: e.target.value })}
+                  className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  placeholder="Visual Novel Lovers"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                  Date
+                </label>
+                <div className="relative group">
+                  <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <input
+                    type="month"
+                    value={getDateInputValue()}
+                    onChange={handleDateChange}
+                    className="w-full pl-9 pr-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm cursor-pointer hover:border-slate-400 dark:hover:border-slate-500"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Row 2: Background Selector */}
-          <BackgroundSelector
-            backgroundImage={editedData.backgroundImage}
-            backgroundFit={editedData.backgroundFit || 'cover'}
-            onImageChange={(url) => setEditedData({ ...editedData, backgroundImage: url })}
-            onFitChange={(fit) => setEditedData({ ...editedData, backgroundFit: fit })}
-          />
+          {/* Row 2: Background Selector & Controls */}
+          <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 space-y-3">
+             <BackgroundSelector
+                backgroundImage={editedData.backgroundImage}
+                onImageChange={(url) => setEditedData({ ...editedData, backgroundImage: url })}
+             />
+             
+             {/* Background Resize Controls */}
+             {editedData.backgroundImage && (
+               <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center justify-between">
+                    <span>Background Transform</span>
+                    <button 
+                       onClick={() => setEditedData({ ...editedData, backgroundScale: 1, backgroundPosition: { x: 0, y: 0 } })}
+                       className="text-[10px] flex items-center gap-1 text-slate-500 hover:text-blue-500 transition-colors"
+                    >
+                       <RotateCcw className="h-3 w-3" /> Reset
+                    </button>
+                  </label>
+                  
+                  <div className="flex items-center gap-3">
+                    <ZoomOut className="h-4 w-4 text-slate-400" />
+                    <input 
+                      type="range"
+                      min="0.1"
+                      max="3"
+                      step="0.01"
+                      value={editedData.backgroundScale || 1}
+                      onChange={(e) => setEditedData({ ...editedData, backgroundScale: parseFloat(e.target.value) })}
+                      className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <ZoomIn className="h-4 w-4 text-slate-400" />
+                    <span className="text-xs font-mono text-slate-500 w-10 text-right">
+                      {Math.round((editedData.backgroundScale || 1) * 100)}%
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
+                     <MousePointer2 className="h-3 w-3" /> Drag image in preview to reposition
+                  </p>
+               </div>
+             )}
+          </div>
 
           {/* Row 3: Preview */}
           <div className="flex flex-col">
-            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg overflow-hidden">
-              <div className="relative" style={{ width: '540px', height: '675px' }}>
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-lg blur opacity-50"></div>
-                <div className="relative border border-slate-300/50 dark:border-slate-600/50 rounded-lg bg-white dark:bg-slate-800 backdrop-blur-sm shadow-xl overflow-hidden" style={{ width: '540px', height: '675px' }}>
-                  <div className="scale-[0.5] origin-top-left" style={{ width: '1080px', height: '1350px' }}>
-                    <div
-                      ref={leaderboardRef}
-                      style={{ width: '1080px', height: '1350px' }}
-                      className="inline-block"
-                    >
-                      <Leaderboard data={editedData} />
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2 relative flex items-center justify-center">
+               {/* Drag Overlay Helper Text */}
+               {editedData.backgroundImage && (
+                 <div className={`absolute top-4 right-4 z-10 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm pointer-events-none transition-opacity ${isDragging ? 'opacity-0' : 'opacity-100'}`}>
+                    Drag to move
+                 </div>
+               )}
+
+              {/* Responsive Container Wrapper */}
+              {/* Aspect Ratio 4:5 (1080:1350) */}
+              <div 
+                ref={containerRef}
+                className={`max-w-full w-full aspect-[4/5] relative overflow-hidden transition-cursor ${isDragging ? 'cursor-grabbing' : editedData.backgroundImage ? 'cursor-grab' : 'cursor-default'}`}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+              >
+                 {/* Scaled Content */}
+                 {/* The inner container is locked to 1080x1350 but scaled down to fit */}
+                 <div 
+                   className="origin-top-left absolute top-0 left-0"
+                   style={{ 
+                     transform: `scale(${scaleFactor})`, 
+                     width: '1080px', 
+                     height: '1350px' 
+                   }}
+                 >
+                    {/* Shadow/Border wrapper */}
+                    <div className="relative w-full h-full overflow-hidden shadow-2xl rounded-lg border border-slate-200 dark:border-slate-800">
+                      {/* We wrap Leaderboard in a div that handles the export ref */}
+                      <div
+                        ref={leaderboardRef}
+                        style={{ width: '1080px', height: '1350px' }}
+                        className="inline-block bg-slate-900" 
+                      >
+                        <Leaderboard data={editedData} />
+                      </div>
                     </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -292,4 +430,3 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
     </div>
   );
 }
-
