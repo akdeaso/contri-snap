@@ -26,6 +26,62 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
     backgroundPosition: data.backgroundPosition || { x: 0, y: 0 },
   });
 
+  // Image loading status
+  const [imageStatus, setImageStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [proxyBackgroundUrl, setProxyBackgroundUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+
+    const loadProxyImage = async () => {
+       if (!editedData.backgroundImage) {
+          if (active) {
+            setProxyBackgroundUrl(null);
+            setImageStatus('ready');
+          }
+          return;
+       }
+       
+       if (editedData.backgroundImage.startsWith('/') || editedData.backgroundImage.startsWith('data:')) {
+          if (active) {
+            setProxyBackgroundUrl(editedData.backgroundImage);
+            setImageStatus('ready');
+          }
+          return;
+       }
+
+       if (active) setImageStatus('loading');
+
+       try {
+         console.log('[Proxy Load] Fetching:', editedData.backgroundImage);
+         const res = await fetch(`/api/proxy?url=${encodeURIComponent(editedData.backgroundImage)}`);
+         if (!res.ok) throw new Error(`Proxy failed: ${res.status}`);
+         
+         const blob = await res.blob();
+         console.log('[Proxy Load] Success, blob size:', blob.size);
+         if (active) {
+            objectUrl = URL.createObjectURL(blob);
+            setProxyBackgroundUrl(objectUrl);
+            setImageStatus('ready');
+         }
+       } catch (e) {
+         console.warn('[Proxy Load] Failed, fallback to direct.', e);
+         if (active) {
+            setProxyBackgroundUrl(editedData.backgroundImage);
+            setImageStatus('error'); // Error means "Preview Only" (direct URL)
+         }
+       }
+    };
+
+    loadProxyImage();
+    
+    return () => {
+       active = false;
+       if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [editedData.backgroundImage]);
+
   // Dragging State
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -66,21 +122,25 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
   const handleDownload = async () => {
     if (!leaderboardRef.current) return;
     setExporting(true);
+    console.log('[Export] Starting download...');
     try {
       const dataUrl = await toPng(leaderboardRef.current, {
         width: 1080,
         height: 1350,
         quality: 1,
         pixelRatio: 2,
+        skipAutoScale: true,
+        cacheBust: proxyBackgroundUrl?.startsWith('blob:') ? false : true,
       });
+      console.log('[Export] Generation success');
       const link = document.createElement('a');
       link.download = 'top-contributors.png';
       link.href = dataUrl;
       link.click();
       setToast({ message: 'Image downloaded successfully!', type: 'success' });
     } catch (error) {
-      console.error('Export error:', error);
-      setToast({ message: 'Failed to export image. Please try again.', type: 'error' });
+      console.error('[Export] Error:', error);
+      setToast({ message: 'Failed to export image. Check console for details.', type: 'error' });
     } finally {
       setExporting(false);
     }
@@ -89,13 +149,17 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
   const handleCopy = async () => {
     if (!leaderboardRef.current) return;
     setExporting(true);
+    console.log('[Export] Starting copy...');
     try {
       const dataUrl = await toPng(leaderboardRef.current, {
         width: 1080,
         height: 1350,
         quality: 1,
         pixelRatio: 2,
+        skipAutoScale: true,
+        cacheBust: proxyBackgroundUrl?.startsWith('blob:') ? false : true,
       });
+      console.log('[Export] Generation success');
       await navigator.clipboard.write([
         new ClipboardItem({
           'image/png': fetch(dataUrl).then((r) => r.blob()),
@@ -103,8 +167,8 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
       ]);
       setToast({ message: 'Image copied to clipboard!', type: 'success' });
     } catch (error) {
-      console.error('Copy error:', error);
-      setToast({ message: 'Failed to copy image. Please try again.', type: 'error' });
+      console.error('[Export] Error:', error);
+      setToast({ message: 'Failed to copy image. Check console for details.', type: 'error' });
     } finally {
       setExporting(false);
     }
@@ -133,7 +197,6 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
 
     return () => observer.disconnect();
   }, []);
-
 
   // --- Background Interaction Handlers ---
 
@@ -175,6 +238,10 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
     return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
   }, [isDragging]);
 
+  const displayData = {
+    ...editedData,
+    backgroundImage: proxyBackgroundUrl || editedData.backgroundImage,
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -241,6 +308,15 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                 backgroundImage={editedData.backgroundImage}
                 onImageChange={(url) => setEditedData({ ...editedData, backgroundImage: url })}
              />
+             
+             {/* Status Indicator */}
+             {editedData.backgroundImage && (
+               <div className="flex items-center justify-end px-1">
+                 {imageStatus === 'loading' && <span className="text-[10px] text-slate-500 flex items-center gap-1">⏳ Processing image...</span>}
+                 {imageStatus === 'ready' && <span className="text-[10px] text-green-600 flex items-center gap-1">✅ Ready for export</span>}
+                 {imageStatus === 'error' && <span className="text-[10px] text-red-500 flex items-center gap-1">⚠️ Remote image blocked, please upload image manually</span>}
+               </div>
+             )}
              
              {/* Background Resize Controls */}
              {editedData.backgroundImage && (
@@ -316,7 +392,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                         style={{ width: '1080px', height: '1350px' }}
                         className="inline-block bg-slate-900" 
                       >
-                        <Leaderboard data={editedData} />
+                        <Leaderboard data={displayData} />
                       </div>
                     </div>
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Image as ImageIcon, Loader2, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 
 interface BackgroundSelectorProps {
   backgroundImage?: string;
@@ -33,7 +33,10 @@ export function BackgroundSelector({
               if (url && url.startsWith('http')) {
                 onImageChange(url);
               } else if (!url) {
-                onImageChange('');
+                // Only clear if empty, don't clear if it might be a data URL from upload
+                if (!backgroundImage?.startsWith('data:')) {
+                     onImageChange('');
+                }
               }
             }}
             onKeyDown={(e) => {
@@ -48,8 +51,38 @@ export function BackgroundSelector({
             className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
         </div>
-        <p className="text-[10px] text-slate-500 mt-1">
-          Paste an image URL to set the background. Use the preview area to drag and resize the image.
+        
+        <div className="flex items-center gap-2 my-2">
+           <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
+           <span className="text-[10px] text-slate-400 font-medium">OR</span>
+           <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
+        </div>
+
+        <div>
+           <label className="flex items-center justify-center gap-2 w-full px-3 py-2 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+              <Upload className="h-4 w-4 text-slate-500" />
+              <span className="text-xs text-slate-600 dark:text-slate-400">Upload Image File</span>
+              <input 
+                 type="file" 
+                 accept="image/*" 
+                 className="hidden" 
+                 onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                       const reader = new FileReader();
+                       reader.onload = (ev) => {
+                          const result = ev.target?.result as string;
+                          if (result) onImageChange(result);
+                       };
+                       reader.readAsDataURL(file);
+                    }
+                 }}
+              />
+           </label>
+        </div>
+
+        <p className="text-[10px] text-slate-500 mt-2">
+          Paste a URL or upload a file. Use the preview area to drag and resize.
         </p>
       </div>
 

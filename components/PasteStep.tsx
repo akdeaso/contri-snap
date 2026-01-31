@@ -54,14 +54,34 @@ export function PasteStep({ onParse }: PasteStepProps) {
           )}
         </div>
 
-        <button
-          onClick={handleParse}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          <FileText className="h-5 w-5" />
-          Parse HTML
-          <ArrowRight className="h-5 w-5" />
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleParse}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md"
+          >
+            <FileText className="h-5 w-5" />
+            Parse HTML
+            <ArrowRight className="h-5 w-5" />
+          </button>
+          
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch('/api/sample');
+                if (!res.ok) throw new Error('Failed to load sample');
+                const sampleHtml = await res.text();
+                setHtml(sampleHtml);
+                onParse(sampleHtml);
+              } catch (e) {
+                setError('Failed to load sample data');
+              }
+            }}
+            className="flex items-center gap-2 px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium shadow-sm hover:shadow-md"
+          >
+             <FileText className="h-5 w-5 opacity-60" />
+             Use Sample
+          </button>
+        </div>
       </div>
     </div>
   );
