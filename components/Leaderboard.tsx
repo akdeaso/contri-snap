@@ -45,6 +45,11 @@ export function Leaderboard({ data }: LeaderboardProps) {
   const scale = data.backgroundScale || 1;
   const position = data.backgroundPosition || { x: 0, y: 0 };
 
+  const now = new Date();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentMonth = monthNames[now.getMonth()];
+  const currentYear = now.getFullYear().toString();
+
   return (
     <div
       className="relative w-full h-full overflow-hidden bg-slate-900"
@@ -59,6 +64,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
           <img
             src={backgroundImage}
             alt="Background"
+            crossOrigin="anonymous"
             className="absolute inset-0 w-full h-full object-contain transition-transform duration-75 ease-linear origin-center"
             style={{
               transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
@@ -89,10 +95,10 @@ export function Leaderboard({ data }: LeaderboardProps) {
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-semibold text-slate-300 leading-tight uppercase tracking-wide">
-                {data.month || 'Dec'}
+                {data.month || currentMonth}
               </span>
               <span className="text-lg font-bold text-white leading-tight">
-                {data.year || '2025'}
+                {data.year || currentYear}
               </span>
             </div>
           </div>
@@ -126,6 +132,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                       <img
                         src={top1.avatar_url}
                         alt={top1.name}
+                        crossOrigin="anonymous"
                         className="relative w-32 h-32 rounded-2xl object-cover shadow-2xl"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -216,6 +223,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                       <img
                         src={top2.avatar_url}
                         alt={top2.name}
+                        crossOrigin="anonymous"
                         className="relative rounded-xl object-cover shadow-lg"
                         style={{ width: '88px', height: '88px' }}
                         onError={(e) => {
@@ -285,6 +293,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                       <img
                         src={top3.avatar_url}
                         alt={top3.name}
+                        crossOrigin="anonymous"
                         className="relative rounded-xl object-cover shadow-lg"
                         style={{ width: '88px', height: '88px' }}
                         onError={(e) => {
@@ -362,6 +371,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                   <img
                     src={contributor.avatar_url}
                     alt={contributor.name}
+                    crossOrigin="anonymous"
                     className="relative rounded-xl object-cover shadow-md"
                     style={{ width: '72px', height: '72px' }}
                     onError={(e) => {

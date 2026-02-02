@@ -22,11 +22,16 @@ export function PreviewStep({ data, onExport, onBack }: PreviewStepProps) {
   const leaderboardRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
   const [showFullSize, setShowFullSize] = useState(false);
+  const now = new Date();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentMonth = monthNames[now.getMonth()];
+  const currentYear = now.getFullYear().toString();
+
   const [editedData, setEditedData] = useState<ContributorData>({
     ...data,
     title: data.title || "Visual Novel Lovers",
-    month: data.month || "Dec",
-    year: data.year || "2025",
+    month: data.month || currentMonth,
+    year: data.year || currentYear,
   });
 
   const handleDownload = async () => {
@@ -143,7 +148,7 @@ export function PreviewStep({ data, onExport, onBack }: PreviewStepProps) {
           </label>
           <input
             type="text"
-            value={editedData.month || "Dec"}
+            value={editedData.month || currentMonth}
             onChange={(e) =>
               setEditedData({
                 ...editedData,
@@ -152,7 +157,7 @@ export function PreviewStep({ data, onExport, onBack }: PreviewStepProps) {
             }
             maxLength={3}
             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
-            placeholder="Dec"
+            placeholder={currentMonth}
           />
         </div>
         <div>
@@ -161,12 +166,12 @@ export function PreviewStep({ data, onExport, onBack }: PreviewStepProps) {
           </label>
           <input
             type="text"
-            value={editedData.year || "2025"}
+            value={editedData.year || currentYear}
             onChange={(e) =>
               setEditedData({ ...editedData, year: e.target.value })
             }
             className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="2025"
+            placeholder={currentYear}
           />
         </div>
       </div>

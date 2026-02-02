@@ -372,49 +372,6 @@ export function parseHTML(htmlString: string): ParsedContributor[] {
     }
   }
 
-  // BRUTE TEST: Verifikasi data sesuai dengan expected values
-  const expectedData = [
-    { rank: 1, posts: 13, comments: 50, reactions: 20 },
-    { rank: 2, posts: 6, comments: 21, reactions: 6 },
-    { rank: 3, posts: 6, comments: 13, reactions: 25 },
-    { rank: 4, posts: 2, comments: 27, reactions: 6 },
-    { rank: 5, posts: 1, comments: 30, reactions: 5 },
-    { rank: 6, posts: 5, comments: 6, reactions: 5 },
-    { rank: 7, posts: 2, comments: 11, reactions: 5 },
-    { rank: 8, posts: 4, comments: 0, reactions: 2 },
-    { rank: 9, posts: 3, comments: 5, reactions: 2 },
-    { rank: 10, posts: 1, comments: 14, reactions: 2 },
-  ];
-
-  console.log("\n=== BRUTE TEST RESULTS ===");
-  let allCorrect = true;
-  expectedData.forEach((expected) => {
-    const actual = result.find((c) => c.rank === expected.rank);
-    if (actual) {
-      const postsMatch = actual.posts === expected.posts;
-      const commentsMatch = actual.comments === expected.comments;
-      const reactionsMatch = actual.reactions === expected.reactions;
-      const isCorrect = postsMatch && commentsMatch && reactionsMatch;
-
-      if (!isCorrect) {
-        allCorrect = false;
-        console.error(
-          `❌ Rank ${expected.rank}: Expected (${expected.posts}, ${expected.comments}, ${expected.reactions}), Got (${actual.posts}, ${actual.comments}, ${actual.reactions})`
-        );
-      } else {
-        console.log(
-          `✅ Rank ${expected.rank}: Correct (${actual.posts}, ${actual.comments}, ${actual.reactions})`
-        );
-      }
-    } else {
-      allCorrect = false;
-      console.error(`❌ Rank ${expected.rank}: NOT FOUND`);
-    }
-  });
-  console.log(
-    `\n=== Overall: ${allCorrect ? "✅ ALL CORRECT" : "❌ SOME ERRORS"} ===\n`
-  );
-
   return result;
 }
 

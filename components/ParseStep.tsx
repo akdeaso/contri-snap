@@ -23,11 +23,16 @@ export function ParseStep({ html, onComplete, onBack }: ParseStepProps) {
         const contributors = parseHTML(html);
         const dateInfo = parseDate(html);
         
+        const now = new Date();
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const currentMonth = monthNames[now.getMonth()];
+        const currentYear = now.getFullYear().toString();
+
         const data: ContributorData = {
           contributors,
           title: 'Visual Novel Lovers',
-          month: dateInfo?.month || 'Dec',
-          year: dateInfo?.year || '2025',
+          month: dateInfo?.month || currentMonth,
+          year: dateInfo?.year || currentYear,
         };
 
         setResult(data);

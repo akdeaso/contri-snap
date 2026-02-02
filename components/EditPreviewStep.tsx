@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Download, Copy, Calendar, RotateCcw, ZoomIn, ZoomOut, MousePointer2 } from 'lucide-react';
+import { ArrowLeft, Download, Copy, Calendar, RotateCcw, ZoomIn, ZoomOut, MousePointer2, ExternalLink } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { Leaderboard } from './Leaderboard';
 import { BackgroundSelector } from './BackgroundSelector';
@@ -17,11 +17,16 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
   const leaderboardRef = useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const now = new Date();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentMonth = monthNames[now.getMonth()];
+  const currentYear = now.getFullYear().toString();
+
   const [editedData, setEditedData] = useState<ContributorData>({
     ...data,
     title: data.title || 'Visual Novel Lovers',
-    month: data.month || 'Dec',
-    year: data.year || '2025',
+    month: data.month || currentMonth,
+    year: data.year || currentYear,
     backgroundScale: data.backgroundScale || 1,
     backgroundPosition: data.backgroundPosition || { x: 0, y: 0 },
   });
@@ -29,58 +34,88 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
   // Image loading status
   const [imageStatus, setImageStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [proxyBackgroundUrl, setProxyBackgroundUrl] = useState<string | null>(null);
+  const [proxiedAvatars, setProxiedAvatars] = useState<Record<number, string>>({});
 
+  // Background Proxy Effect
   useEffect(() => {
     let active = true;
     let objectUrl: string | null = null;
 
-    const loadProxyImage = async () => {
-       if (!editedData.backgroundImage) {
-          if (active) {
-            setProxyBackgroundUrl(null);
-            setImageStatus('ready');
-          }
-          return;
-       }
-       
-       if (editedData.backgroundImage.startsWith('/') || editedData.backgroundImage.startsWith('data:')) {
-          if (active) {
-            setProxyBackgroundUrl(editedData.backgroundImage);
-            setImageStatus('ready');
-          }
-          return;
-       }
+    const proxyBackground = async () => {
+      if (!editedData.backgroundImage) {
+        if (active) setProxyBackgroundUrl(null);
+        return;
+      }
+      if (editedData.backgroundImage.startsWith('/') || editedData.backgroundImage.startsWith('data:') || editedData.backgroundImage.startsWith('blob:')) {
+        if (active) setProxyBackgroundUrl(editedData.backgroundImage);
+        return;
+      }
 
-       if (active) setImageStatus('loading');
-
-       try {
-         console.log('[Proxy Load] Fetching:', editedData.backgroundImage);
-         const res = await fetch(`/api/proxy?url=${encodeURIComponent(editedData.backgroundImage)}`);
-         if (!res.ok) throw new Error(`Proxy failed: ${res.status}`);
-         
-         const blob = await res.blob();
-         console.log('[Proxy Load] Success, blob size:', blob.size);
-         if (active) {
-            objectUrl = URL.createObjectURL(blob);
-            setProxyBackgroundUrl(objectUrl);
-            setImageStatus('ready');
-         }
-       } catch (e) {
-         console.warn('[Proxy Load] Failed, fallback to direct.', e);
-         if (active) {
-            setProxyBackgroundUrl(editedData.backgroundImage);
-            setImageStatus('error'); // Error means "Preview Only" (direct URL)
-         }
-       }
+      try {
+        const res = await fetch(`/api/proxy?url=${encodeURIComponent(editedData.backgroundImage)}`);
+        if (!res.ok) throw new Error();
+        const blob = await res.blob();
+        if (active) {
+          objectUrl = URL.createObjectURL(blob);
+          setProxyBackgroundUrl(objectUrl);
+        }
+      } catch (e) {
+        console.warn('[Proxy] Background failed, using direct URL');
+        if (active) setProxyBackgroundUrl(editedData.backgroundImage);
+      }
     };
 
-    loadProxyImage();
-    
+    proxyBackground();
+
     return () => {
-       active = false;
-       if (objectUrl) URL.revokeObjectURL(objectUrl);
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [editedData.backgroundImage]);
+
+  // Avatars Proxy Effect
+  useEffect(() => {
+    let active = true;
+    const currentObjectUrls: Record<number, string> = {};
+
+    const proxyAvatars = async () => {
+      const promises = editedData.contributors.map(async (contributor, index) => {
+        const url = contributor.avatar_url;
+        if (!url || url.startsWith('/') || url.startsWith('data:') || url.startsWith('blob:')) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
+          if (!res.ok) throw new Error();
+          const blob = await res.blob();
+          if (active) {
+            const objectUrl = URL.createObjectURL(blob);
+            currentObjectUrls[index] = objectUrl;
+            setProxiedAvatars(prev => ({ ...prev, [index]: objectUrl }));
+          }
+        } catch (e) {
+          console.warn(`[Proxy] Avatar ${index} failed, using fallback`);
+          // Use UI Avatars as fallback - it's CORS enabled and won't block export
+          if (active) {
+            const fallbackUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(contributor.name)}&background=random&color=fff&size=128`;
+            setProxiedAvatars(prev => ({ ...prev, [index]: fallbackUrl }));
+          }
+        }
+      });
+
+      if (active) setImageStatus('loading');
+      await Promise.all(promises);
+      if (active) setImageStatus('ready');
+    };
+
+    proxyAvatars();
+
+    return () => {
+      active = false;
+      Object.values(currentObjectUrls).forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [JSON.stringify(editedData.contributors.map(c => c.avatar_url))]);
 
   // Dragging State
   const [isDragging, setIsDragging] = useState(false);
@@ -105,42 +140,62 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
     const value = e.target.value; // Format: YYYY-MM
     if (value) {
       const [year, monthNum] = value.split('-');
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const month = monthNames[parseInt(monthNum) - 1] || 'Dec';
+      const month = monthNames[parseInt(monthNum) - 1] || currentMonth;
       setEditedData({ ...editedData, month, year });
     }
   };
 
   // Convert month name to YYYY-MM format for input
   const getDateInputValue = () => {
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const monthIndex = monthNames.indexOf(editedData.month || 'Dec');
-    const monthNum = monthIndex >= 0 ? String(monthIndex + 1).padStart(2, '0') : '12';
-    return `${editedData.year || '2025'}-${monthNum}`;
+    const monthIndex = monthNames.indexOf(editedData.month || currentMonth);
+    const monthNum = monthIndex >= 0 ? String(monthIndex + 1).padStart(2, '0') : String(now.getMonth() + 1).padStart(2, '0');
+    return `${editedData.year || currentYear}-${monthNum}`;
+  };
+
+  const generateExportImage = async () => {
+    if (!leaderboardRef.current) return null;
+    return await toPng(leaderboardRef.current, {
+      width: 1080,
+      height: 1350,
+      style: {
+        transform: 'none',
+        width: '1080px',
+        height: '1350px',
+        margin: '0',
+        padding: '0',
+        left: '0',
+        top: '0',
+        borderRadius: '0',
+      },
+      quality: 1,
+      pixelRatio: 2,
+      skipAutoScale: true,
+      cacheBust: false,
+    });
   };
 
   const handleDownload = async () => {
     if (!leaderboardRef.current) return;
     setExporting(true);
+    if (imageStatus === 'loading') {
+      setToast({ message: 'Images are still being processed. Please wait a moment...', type: 'error' });
+      setExporting(false);
+      return;
+    }
     console.log('[Export] Starting download...');
     try {
-      const dataUrl = await toPng(leaderboardRef.current, {
-        width: 1080,
-        height: 1350,
-        quality: 1,
-        pixelRatio: 2,
-        skipAutoScale: true,
-        cacheBust: proxyBackgroundUrl?.startsWith('blob:') ? false : true,
-      });
+      const dataUrl = await generateExportImage();
+      if (!dataUrl) throw new Error('Failed to generate image');
+      
       console.log('[Export] Generation success');
       const link = document.createElement('a');
-      link.download = 'top-contributors.png';
+      link.download = `top-contributors-${editedData.month}-${editedData.year}.png`;
       link.href = dataUrl;
       link.click();
       setToast({ message: 'Image downloaded successfully!', type: 'success' });
     } catch (error) {
       console.error('[Export] Error:', error);
-      setToast({ message: 'Failed to export image. Check console for details.', type: 'error' });
+      setToast({ message: 'Failed to export image.', type: 'error' });
     } finally {
       setExporting(false);
     }
@@ -149,16 +204,16 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
   const handleCopy = async () => {
     if (!leaderboardRef.current) return;
     setExporting(true);
+    if (imageStatus === 'loading') {
+      setToast({ message: 'Images are still being processed. Please wait a moment...', type: 'error' });
+      setExporting(false);
+      return;
+    }
     console.log('[Export] Starting copy...');
     try {
-      const dataUrl = await toPng(leaderboardRef.current, {
-        width: 1080,
-        height: 1350,
-        quality: 1,
-        pixelRatio: 2,
-        skipAutoScale: true,
-        cacheBust: proxyBackgroundUrl?.startsWith('blob:') ? false : true,
-      });
+      const dataUrl = await generateExportImage();
+      if (!dataUrl) throw new Error('Failed to generate image');
+
       console.log('[Export] Generation success');
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -168,7 +223,81 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
       setToast({ message: 'Image copied to clipboard!', type: 'success' });
     } catch (error) {
       console.error('[Export] Error:', error);
-      setToast({ message: 'Failed to copy image. Check console for details.', type: 'error' });
+      setToast({ message: 'Failed to copy image.', type: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleOpen = async () => {
+    if (!leaderboardRef.current) return;
+    setExporting(true);
+    if (imageStatus === 'loading') {
+      setToast({ message: 'Images are still being processed. Please wait a moment...', type: 'error' });
+      setExporting(false);
+      return;
+    }
+    console.log('[Export] Starting open...');
+    try {
+      const dataUrl = await generateExportImage();
+      if (!dataUrl) throw new Error('Failed to generate image');
+      
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>Leaderboard Preview - ${editedData.month} ${editedData.year}</title>
+              <style>
+                body { 
+                  margin: 0; 
+                  background: #0f172a; 
+                  padding: 40px 20px; 
+                  display: flex; 
+                  flex-direction: column; 
+                  align-items: center; 
+                  min-height: 100vh;
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                }
+                .container {
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  gap: 20px;
+                  max-width: 1080px;
+                }
+                .controls { 
+                  color: #94a3b8; 
+                  font-size: 14px;
+                  background: rgba(255,255,255,0.05);
+                  padding: 8px 16px;
+                  border-radius: 20px;
+                  backdrop-filter: blur(8px);
+                }
+                img { 
+                  max-width: 100%; 
+                  height: auto; 
+                  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+                  border-radius: 4px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="controls">Right-click image and select "Save Image As..." to download</div>
+                <img src="${dataUrl}" />
+              </div>
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+      } else {
+        setToast({ message: 'Popup blocked! Please allow popups.', type: 'error' });
+      }
+    } catch (error) {
+      console.error('[Export] Error:', error);
+      setToast({ message: 'Failed to open image.', type: 'error' });
     } finally {
       setExporting(false);
     }
@@ -241,6 +370,10 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
   const displayData = {
     ...editedData,
     backgroundImage: proxyBackgroundUrl || editedData.backgroundImage,
+    contributors: editedData.contributors.map((c, i) => ({
+      ...c,
+      avatar_url: proxiedAvatars[i] || c.avatar_url
+    }))
   };
 
   return (
@@ -408,6 +541,14 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>{exporting ? 'Exporting...' : 'Download'}</span>
+              </button>
+              <button
+                onClick={handleOpen}
+                disabled={exporting}
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium shadow-md"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span>Open</span>
               </button>
               <button
                 onClick={handleCopy}
