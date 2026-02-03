@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { PasteStep } from '@/components/PasteStep';
-import { ParseStep } from '@/components/ParseStep';
-import { EditPreviewStep } from '@/components/EditPreviewStep';
-import { ExportStep } from '@/components/ExportStep';
+import { PasteStep } from '@/components/features/PasteStep';
+import { ParseStep } from '@/components/features/ParseStep';
+import { EditPreviewStep } from '@/components/features/EditPreviewStep';
+import { ExportStep } from '@/components/features/ExportStep';
 import type { Step, ContributorData } from '@/types';
 
 export default function Home() {

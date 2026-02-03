@@ -3,6 +3,8 @@
 import { MessageSquare, FileText, Heart, Star, TrendingUp, Award, Calendar } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ContributorData } from '@/types';
+import { BADGE_COLORS, LEADERBOARD_WIDTH, LEADERBOARD_HEIGHT } from '@/constants';
+import { getCurrentMonth, getCurrentYear } from '@/utils/date';
 
 interface LeaderboardProps {
   data: ContributorData;
@@ -10,16 +12,7 @@ interface LeaderboardProps {
 
 export function Leaderboard({ data }: LeaderboardProps) {
   const getBadgeColor = (badge: string | null) => {
-    switch (badge) {
-      case 'all-star contributor':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-      case 'top contributor':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'rising contributor':
-        return 'bg-green-500/20 text-green-400 border-green-500/30';
-      default:
-        return 'bg-slate-700/20 text-slate-400 border-slate-600/30';
-    }
+    return badge ? BADGE_COLORS[badge] || BADGE_COLORS.default : BADGE_COLORS.default;
   };
 
   const getBadgeIcon = (badge: string | null) => {
@@ -40,22 +33,16 @@ export function Leaderboard({ data }: LeaderboardProps) {
   const top3 = data.contributors[2];
   const remaining = data.contributors.slice(3, 10);
 
-  const backgroundFit = data.backgroundFit || 'cover';
   const backgroundImage = data.backgroundImage;
   const scale = data.backgroundScale || 1;
   const position = data.backgroundPosition || { x: 0, y: 0 };
-
-  const now = new Date();
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const currentMonth = monthNames[now.getMonth()];
-  const currentYear = now.getFullYear().toString();
 
   return (
     <div
       className="relative w-full h-full overflow-hidden bg-slate-900"
       style={{
-        width: '1080px',
-        height: '1350px',
+        width: `${LEADERBOARD_WIDTH}px`,
+        height: `${LEADERBOARD_HEIGHT}px`,
       }}
     >
       {/* Background Image Layer */}
@@ -95,10 +82,10 @@ export function Leaderboard({ data }: LeaderboardProps) {
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-semibold text-slate-300 leading-tight uppercase tracking-wide">
-                {data.month || currentMonth}
+                {data.month || getCurrentMonth()}
               </span>
               <span className="text-lg font-bold text-white leading-tight">
-                {data.year || currentYear}
+                {data.year || getCurrentYear()}
               </span>
             </div>
           </div>
@@ -143,7 +130,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                       />
                     ) : null}
                     <div className="relative w-32 h-32 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-5xl font-bold text-white shadow-2xl" style={{ display: top1.avatar_url ? 'none' : 'flex' }}>
-                      {top1.name.charAt(0).toUpperCase()}
+                      {top1.name ? top1.name.charAt(0).toUpperCase() : '?'}
                     </div>
                     {/* Rank badge */}
                     <div className="absolute -top-2 -right-2 w-12 h-12 bg-yellow-500 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-lg border-2 border-yellow-300/50">
@@ -235,7 +222,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                       />
                     ) : null}
                     <div className="relative rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-4xl font-bold text-white shadow-lg" style={{ width: '88px', height: '88px', display: top2.avatar_url ? 'none' : 'flex' }}>
-                      {top2.name.charAt(0).toUpperCase()}
+                      {top2.name ? top2.name.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div className="absolute -top-2 -right-2 w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-xl">
                       #2
@@ -305,7 +292,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                       />
                     ) : null}
                     <div className="relative rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-4xl font-bold text-white shadow-lg" style={{ width: '88px', height: '88px', display: top3.avatar_url ? 'none' : 'flex' }}>
-                      {top3.name.charAt(0).toUpperCase()}
+                      {top3.name ? top3.name.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div className="absolute -top-2 -right-2 w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-xl">
                       #3
@@ -383,7 +370,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                   />
                 ) : null}
                 <div className="relative rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center text-3xl font-bold text-white shadow-md" style={{ width: '72px', height: '72px', display: contributor.avatar_url ? 'none' : 'flex' }}>
-                  {contributor.name.charAt(0).toUpperCase()}
+                  {contributor.name ? contributor.name.charAt(0).toUpperCase() : '?'}
                 </div>
               </div>
 

@@ -2,8 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Loader2, ArrowLeft, ArrowRight, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { parseHTML, parseDate } from '@/lib/htmlParser';
 import type { ContributorData } from '@/types';
+import { getCurrentMonth, getCurrentYear } from '@/utils/date';
+import { DEFAULT_GROUP_NAME } from '@/constants';
 
 interface ParseStepProps {
   html: string;
@@ -23,16 +26,11 @@ export function ParseStep({ html, onComplete, onBack }: ParseStepProps) {
         const contributors = parseHTML(html);
         const dateInfo = parseDate(html);
         
-        const now = new Date();
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const currentMonth = monthNames[now.getMonth()];
-        const currentYear = now.getFullYear().toString();
-
         const data: ContributorData = {
           contributors,
-          title: 'Visual Novel Lovers',
-          month: dateInfo?.month || currentMonth,
-          year: dateInfo?.year || currentYear,
+          title: DEFAULT_GROUP_NAME,
+          month: dateInfo?.month || getCurrentMonth(),
+          year: dateInfo?.year || getCurrentYear(),
         };
 
         setResult(data);
@@ -110,24 +108,23 @@ export function ParseStep({ html, onComplete, onBack }: ParseStepProps) {
           </div>
 
           <div className="flex gap-4">
-            <button
+            <Button
+              variant="outline"
               onClick={onBack}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleContinue}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6"
             >
               Continue to Edit
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
       )}
     </div>
   );
 }
-
