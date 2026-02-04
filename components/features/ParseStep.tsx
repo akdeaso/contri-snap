@@ -25,7 +25,7 @@ export function ParseStep({ html, onComplete, onBack }: ParseStepProps) {
         setParsing(true);
         const contributors = parseHTML(html);
         const dateInfo = parseDate(html);
-        
+
         const data: ContributorData = {
           contributors,
           title: DEFAULT_GROUP_NAME,
@@ -107,20 +107,22 @@ export function ParseStep({ html, onComplete, onBack }: ParseStepProps) {
             </div>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <Button
               variant="outline"
               onClick={onBack}
+              icon={<ArrowLeft />}
+              isFlex1
             >
-              <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
             <Button
+              variant="outline"
               onClick={handleContinue}
-              className="px-6"
+              icon={<ArrowRight />}
+              isFlex1
             >
               Continue to Edit
-              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         </div>

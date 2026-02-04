@@ -44,18 +44,17 @@ export function PasteStep({ onParse }: PasteStepProps) {
           </p>
         </div>
         <Button
-          type="button"
           variant="outline"
           size="sm"
           onClick={handleUseSample}
-          disabled={isLoadingSample}
-          className="flex-shrink-0"
+          loading={isLoadingSample}
+          icon={<FileCode />}
+          isShrink0
         >
-          <FileCode className="h-4 w-4 mr-2" />
-          {isLoadingSample ? 'Loading...' : 'Use Sample'}
+          Use Sample
         </Button>
       </div>
-      
+
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex gap-3">
         <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
         <div className="text-sm text-blue-800 dark:text-blue-300">
@@ -83,10 +82,9 @@ export function PasteStep({ onParse }: PasteStepProps) {
           type="submit"
           disabled={!html.trim()}
           size="lg"
-          className="w-full text-lg font-semibold shadow-lg hover:shadow-xl active:scale-[0.98]"
+          isFullWidth
         >
           Parse Contributors
-          <ArrowRight className="h-5 w-5 ml-2" />
         </Button>
       </form>
     </div>

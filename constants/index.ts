@@ -7,9 +7,21 @@ export const DEFAULT_GROUP_NAME = 'Visual Novel Lovers';
 export const LEADERBOARD_WIDTH = 1080;
 export const LEADERBOARD_HEIGHT = 1350;
 
+export const BADGE_TYPES = {
+  ALL_STAR: 'all-star contributor',
+  TOP: 'top contributor',
+  RISING: 'rising contributor',
+} as const;
+
 export const BADGE_COLORS: Record<string, string> = {
-  'all-star contributor': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  'top contributor': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  'rising contributor': 'bg-green-500/20 text-green-400 border-green-500/30',
+  [BADGE_TYPES.ALL_STAR]: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  [BADGE_TYPES.TOP]: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  [BADGE_TYPES.RISING]: 'bg-green-500/20 text-green-400 border-green-500/30',
   default: 'bg-slate-700/20 text-slate-400 border-slate-600/30',
 };
+
+export const BADGES = [
+  { id: BADGE_TYPES.ALL_STAR, label: 'All-star Contributor' },
+  { id: BADGE_TYPES.TOP, label: 'Top Contributor' },
+  { id: BADGE_TYPES.RISING, label: 'Rising Contributor' },
+] as const;

@@ -13,6 +13,7 @@ import { useEditorData } from '@/hooks/useEditorData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatMonthYearToInput, parseInputToMonthYear } from '@/utils/date';
+import { BADGES, LEADERBOARD_WIDTH, LEADERBOARD_HEIGHT, DEFAULT_GROUP_NAME } from '@/constants';
 
 interface EditPreviewStepProps {
   data: ContributorData;
@@ -28,14 +29,14 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
 
   // 2. Image Proxying
   const { proxyBackgroundUrl, proxiedAvatars, imageStatus } = useImageProxy(
-    editedData.backgroundImage, 
+    editedData.backgroundImage,
     editedData.contributors
   );
 
   // 3. Export logic
   const { exporting, handleDownload, handleCopy, handleOpen } = useExport(
-    leaderboardRef, 
-    editedData.month, 
+    leaderboardRef,
+    editedData.month,
     editedData.year
   );
 
@@ -97,7 +98,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
             <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Header Settings
             </h4>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
@@ -107,7 +108,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                   type="text"
                   value={editedData.title}
                   onChange={(e) => updateField('title', e.target.value)}
-                  placeholder="Visual Novel Lovers"
+                  placeholder={DEFAULT_GROUP_NAME}
                 />
               </div>
 
@@ -116,7 +117,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                   Date
                 </label>
                 <div className="relative group">
-                  <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <Calendar className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none group-focus-within:text-blue-500 transition-colors" />
                   <Input
                     type="month"
                     value={formatMonthYearToInput(editedData.month || '', editedData.year || '')}
@@ -127,7 +128,8 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                         updateField('year', res.year);
                       }
                     }}
-                    className="pl-9 cursor-pointer"
+                    onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
+                    className="pl-9 pr-3 cursor-pointer"
                   />
                 </div>
               </div>
@@ -136,73 +138,73 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
 
           {/* Row 2: Background Selector & Controls */}
           <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3 space-y-3">
-             <BackgroundSelector
-                backgroundImage={editedData.backgroundImage}
-                onImageChange={(url) => updateField('backgroundImage', url)}
-             />
-             
-             {/* Status Indicator */}
-             {editedData.backgroundImage && (
-               <div className="flex items-center justify-end px-1">
-                 {imageStatus === 'loading' && <span className="text-[10px] text-slate-500 flex items-center gap-1">⏳ Processing image...</span>}
-                 {imageStatus === 'ready' && <span className="text-[10px] text-green-600 flex items-center gap-1">✅ Ready for export</span>}
-                 {imageStatus === 'error' && <span className="text-[10px] text-red-500 flex items-center gap-1">⚠️ Remote image blocked, please upload image manually</span>}
-               </div>
-             )}
-             
-             {/* Background Resize Controls */}
-             {editedData.backgroundImage && (
-               <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center justify-between">
-                    <span>Background Transform</span>
-                    <Button 
-                       variant="ghost"
-                       size="sm"
-                       onClick={() => {
-                         updateField('backgroundScale', 1);
-                         updateField('backgroundPosition', { x: 0, y: 0 });
-                       }}
-                       className="h-6 text-[10px] text-slate-500 hover:text-blue-500"
-                    >
-                       <RotateCcw className="h-3 w-3" /> Reset
-                    </Button>
-                  </label>
-                  
-                  <div className="flex items-center gap-3">
-                    <ZoomOut className="h-4 w-4 text-slate-400" />
-                    <input 
-                      type="range"
-                      min="0.1"
-                      max="3"
-                      step="0.01"
-                      value={editedData.backgroundScale || 1}
-                      onChange={(e) => updateField('backgroundScale', parseFloat(e.target.value))}
-                      className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
-                    <ZoomIn className="h-4 w-4 text-slate-400" />
-                    <span className="text-xs font-mono text-slate-500 w-10 text-right">
-                      {Math.round((editedData.backgroundScale || 1) * 100)}%
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
-                     <MousePointer2 className="h-3 w-3" /> Drag image in preview to reposition
-                  </p>
-               </div>
-             )}
+            <BackgroundSelector
+              backgroundImage={editedData.backgroundImage}
+              onImageChange={(url) => updateField('backgroundImage', url)}
+            />
+
+            {/* Status Indicator */}
+            {editedData.backgroundImage && (
+              <div className="flex items-center justify-end px-1">
+                {imageStatus === 'loading' && <span className="text-[10px] text-slate-500 flex items-center gap-1">⏳ Processing image...</span>}
+                {imageStatus === 'ready' && <span className="text-[10px] text-green-600 flex items-center gap-1">✅ Ready for export</span>}
+                {imageStatus === 'error' && <span className="text-[10px] text-red-500 flex items-center gap-1">⚠️ Remote image blocked, please upload image manually</span>}
+              </div>
+            )}
+
+            {/* Background Resize Controls */}
+            {editedData.backgroundImage && (
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 flex items-center justify-between">
+                  <span>Background Transform</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<RotateCcw />}
+                    onClick={() => {
+                      updateField('backgroundScale', 1);
+                      updateField('backgroundPosition', { x: 0, y: 0 });
+                    }}
+                  >
+                    Reset
+                  </Button>
+                </label>
+
+                <div className="flex items-center gap-3">
+                  <ZoomOut className="h-4 w-4 text-slate-400" />
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="3"
+                    step="0.01"
+                    value={editedData.backgroundScale || 1}
+                    onChange={(e) => updateField('backgroundScale', parseFloat(e.target.value))}
+                    className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <ZoomIn className="h-4 w-4 text-slate-400" />
+                  <span className="text-xs font-mono text-slate-500 w-10 text-right">
+                    {Math.round((editedData.backgroundScale || 1) * 100)}%
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 flex items-center gap-1">
+                  <MousePointer2 className="h-3 w-3" /> Drag image in preview to reposition
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Row 3: Preview */}
           <div className="flex flex-col">
             <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-2 relative flex items-center justify-center">
-               {/* Drag Overlay Helper Text */}
-               {editedData.backgroundImage && (
-                 <div className={`absolute top-4 right-4 z-10 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm pointer-events-none transition-opacity ${isDragging ? 'opacity-0' : 'opacity-100'}`}>
-                    Drag to move
-                 </div>
-               )}
+              {/* Drag Overlay Helper Text */}
+              {editedData.backgroundImage && (
+                <div className={`absolute top-4 right-4 z-10 bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm pointer-events-none transition-opacity ${isDragging ? 'opacity-0' : 'opacity-100'}`}>
+                  Drag to move
+                </div>
+              )}
 
               {/* Responsive Container Wrapper */}
-              <div 
+              <div
                 ref={containerRef}
                 className={`max-w-full w-full aspect-[4/5] relative overflow-hidden transition-cursor ${isDragging ? 'cursor-grabbing' : editedData.backgroundImage ? 'cursor-grab' : 'cursor-default'}`}
                 onMouseDown={handleMouseDown}
@@ -210,64 +212,64 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
               >
-                 {/* Scaled Content */}
-                 <div 
-                   className="origin-top-left absolute top-0 left-0"
-                   style={{ 
-                     transform: `scale(${scaleFactor})`, 
-                     width: '1080px', 
-                     height: '1350px' 
-                   }}
-                 >
-                    {/* Shadow/Border wrapper */}
-                    <div className="relative w-full h-full overflow-hidden shadow-2xl rounded-lg border border-slate-200 dark:border-slate-800">
-                      <div
-                        ref={leaderboardRef}
-                        style={{ width: '1080px', height: '1350px' }}
-                        className="inline-block bg-slate-900" 
-                      >
-                        <Leaderboard data={displayData} />
-                      </div>
+                {/* Scaled Content */}
+                <div
+                  className="origin-top-left absolute top-0 left-0"
+                  style={{
+                    transform: `scale(${scaleFactor})`,
+                    width: `${LEADERBOARD_WIDTH}px`,
+                    height: `${LEADERBOARD_HEIGHT}px`
+                  }}
+                >
+                  {/* Shadow/Border wrapper */}
+                  <div className="relative w-full h-full overflow-hidden shadow-2xl rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div
+                      ref={leaderboardRef}
+                      style={{ width: `${LEADERBOARD_WIDTH}px`, height: `${LEADERBOARD_HEIGHT}px` }}
+                      className="inline-block bg-slate-900"
+                    >
+                      <Leaderboard data={displayData} />
                     </div>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            {/* Export Buttons */}
+
             <div className="mt-2 flex gap-2">
               <Button
+                variant="outline"
                 onClick={() => onExportAction(handleDownload)}
-                disabled={exporting}
-                className="flex-1 font-medium shadow-md"
+                loading={exporting}
+                icon={<Download />}
+                isFlex1
               >
-                <Download className="h-3.5 w-3.5" />
-                <span>{exporting ? 'Exporting...' : 'Download'}</span>
-              </Button>
-              <Button
-                onClick={() => onExportAction(handleOpen)}
-                disabled={exporting}
-                variant="secondary"
-                className="flex-1 font-medium shadow-md"
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                <span>Open</span>
-              </Button>
-              <Button
-                onClick={() => onExportAction(handleCopy)}
-                disabled={exporting}
-                variant="default" 
-                className="flex-1 bg-green-600 hover:bg-green-700 font-medium shadow-md"
-              >
-                <Copy className="h-3.5 w-3.5" />
-                <span>Copy</span>
+                Download
               </Button>
               <Button
                 variant="outline"
-                size="icon"
-                onClick={onBack}
+                onClick={() => onExportAction(handleOpen)}
+                loading={exporting}
+                icon={<ExternalLink />}
+                isFlex1
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
+                Open
               </Button>
+              <Button
+                variant="outline"
+                onClick={() => onExportAction(handleCopy)}
+                loading={exporting}
+                icon={<Copy />}
+                isFlex1
+              >
+                Copy
+              </Button>
+              <Button
+                variant="outline"
+                onClick={onBack}
+                aria-label="Go back"
+                icon={<ArrowLeft />}
+                isFlex1
+              />
             </div>
           </div>
         </div>
@@ -282,7 +284,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
               {editedData.contributors.map((contributor, index) => (
                 <div
                   key={index}
-                  className="bg-white dark:bg-slate-800 rounded-lg p-2 border border-slate-200 dark:border-slate-700 space-y-1.5"
+                  className="bg-white dark:bg-slate-900/40 rounded-lg p-3 border border-slate-300 dark:border-slate-600 shadow-sm space-y-2.5 transition-colors hover:border-slate-400 dark:hover:border-slate-500"
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 w-6 flex-shrink-0">
@@ -296,7 +298,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                       className="flex-1 h-8 text-sm"
                     />
                   </div>
-                  
+
                   <Input
                     type="text"
                     value={contributor.avatar_url}
@@ -304,7 +306,7 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                     placeholder="Avatar URL"
                     className="w-full h-7 text-xs"
                   />
-                  
+
                   <div className="grid grid-cols-3 gap-1.5">
                     <Input
                       type="number"
@@ -331,16 +333,18 @@ export function EditPreviewStep({ data, onBack }: EditPreviewStepProps) {
                       className="h-7 text-xs"
                     />
                   </div>
-                  
+
                   <select
                     value={contributor.badge || ''}
                     onChange={(e) => updateContributor(index, 'badge', e.target.value as BadgeType || null)}
-                    className="flex h-7 w-full rounded-md border border-slate-200 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 dark:border-slate-800 dark:bg-slate-700 dark:text-white"
+                    className="flex h-8 w-full rounded-md border border-slate-300 bg-transparent px-2 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 dark:border-slate-700 dark:bg-slate-800 dark:text-white cursor-pointer"
                   >
                     <option value="">No Badge</option>
-                    <option value="all-star contributor">All-star Contributor</option>
-                    <option value="top contributor">Top Contributor</option>
-                    <option value="rising contributor">Rising Contributor</option>
+                    {BADGES.map((badge) => (
+                      <option key={badge.id} value={badge.id}>
+                        {badge.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               ))}

@@ -3,7 +3,7 @@
 import { MessageSquare, FileText, Heart, Star, TrendingUp, Award, Calendar } from 'lucide-react';
 import { clsx } from 'clsx';
 import type { ContributorData } from '@/types';
-import { BADGE_COLORS, LEADERBOARD_WIDTH, LEADERBOARD_HEIGHT } from '@/constants';
+import { BADGE_COLORS, LEADERBOARD_WIDTH, LEADERBOARD_HEIGHT, BADGE_TYPES, DEFAULT_GROUP_NAME } from '@/constants';
 import { getCurrentMonth, getCurrentYear } from '@/utils/date';
 
 interface LeaderboardProps {
@@ -17,11 +17,11 @@ export function Leaderboard({ data }: LeaderboardProps) {
 
   const getBadgeIcon = (badge: string | null) => {
     switch (badge) {
-      case 'all-star contributor':
+      case BADGE_TYPES.ALL_STAR:
         return <Star className="h-3.5 w-3.5" />;
-      case 'top contributor':
+      case BADGE_TYPES.TOP:
         return <Award className="h-3.5 w-3.5" />;
-      case 'rising contributor':
+      case BADGE_TYPES.RISING:
         return <TrendingUp className="h-3.5 w-3.5" />;
       default:
         return null;
@@ -63,7 +63,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
       ) : (
         /* Fallback Gradient Background */
         <div className="absolute inset-0 bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_50%,#0f172a_100%)]">
-           {/* Ambient background effects */}
+          {/* Ambient background effects */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute -top-40 -left-40 w-80 h-80 bg-blue-500/5 rounded-full blur-3xl"></div>
             <div className="absolute top-1/3 -right-40 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"></div>
@@ -95,7 +95,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
         <div className="text-center mb-6">
           <div className="mb-2">
             <span className="text-3xl font-bold text-white tracking-tight">
-              {data.title || 'Visual Novel Lovers'}
+              {data.title || DEFAULT_GROUP_NAME}
             </span>
             <span className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 ml-3 tracking-tight">
               Top Contributors
@@ -109,7 +109,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
             <div className="relative">
               {/* Decorative accent */}
               <div className="absolute -top-2 -left-2 w-24 h-24 bg-yellow-500/10 rounded-full blur-xl"></div>
-              
+
               <div className="relative bg-gradient-to-br from-yellow-500/15 via-yellow-600/10 to-transparent backdrop-blur-sm rounded-3xl p-6 border border-yellow-500/20">
                 <div className="flex items-start gap-5">
                   {/* Avatar Section */}
@@ -158,7 +158,7 @@ export function Leaderboard({ data }: LeaderboardProps) {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Stats */}
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
